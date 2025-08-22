@@ -5,54 +5,20 @@ import {
   auditLog 
 } from '../middleware/auth';
 import { AuditAction, EntityType } from '../models/AuditLog';
+import { ClientController } from '../controllers/ClientController';
 
 const router = express.Router();
 
-// Placeholder para ClientController que será implementado na Fase 4
-const ClientController = {
-  async getClients(req: express.Request, res: express.Response) {
-    res.json({
-      message: 'Endpoint implementado na Fase 4',
-      endpoint: 'GET /api/clients',
-      phase: 'FASE_4_PENDING'
-    });
-  },
-
-  async createClient(req: express.Request, res: express.Response) {
-    res.json({
-      message: 'Endpoint implementado na Fase 4',
-      endpoint: 'POST /api/clients',
-      phase: 'FASE_4_PENDING'
-    });
-  },
-
-  async getClient(req: express.Request, res: express.Response) {
-    res.json({
-      message: 'Endpoint implementado na Fase 4',
-      endpoint: 'GET /api/clients/:id',
-      phase: 'FASE_4_PENDING',
-      clientId: req.params.id
-    });
-  },
-
-  async updateClient(req: express.Request, res: express.Response) {
-    res.json({
-      message: 'Endpoint implementado na Fase 4',
-      endpoint: 'PUT /api/clients/:id',
-      phase: 'FASE_4_PENDING',
-      clientId: req.params.id
-    });
-  },
-
-  async deleteClient(req: express.Request, res: express.Response) {
-    res.json({
-      message: 'Endpoint implementado na Fase 4',
-      endpoint: 'DELETE /api/clients/:id',
-      phase: 'FASE_4_PENDING',
-      clientId: req.params.id
-    });
-  }
-};
+/**
+ * @route GET /api/clients/count
+ * @description Conta total de clientes
+ * @access Private (requer workspace desbloqueado)
+ */
+router.get('/count', 
+  validateSession, 
+  requireUnlockedWorkspace,
+  ClientController.getClientsCount
+);
 
 /**
  * @route GET /api/clients
@@ -62,7 +28,6 @@ const ClientController = {
 router.get('/', 
   validateSession, 
   requireUnlockedWorkspace,
-  auditLog('CLIENT_LIST_VIEWED', EntityType.CLIENT),
   ClientController.getClients
 );
 
@@ -74,7 +39,6 @@ router.get('/',
 router.post('/', 
   validateSession, 
   requireUnlockedWorkspace,
-  auditLog(AuditAction.CLIENT_CREATED, EntityType.CLIENT),
   ClientController.createClient
 );
 
@@ -86,7 +50,6 @@ router.post('/',
 router.get('/:id', 
   validateSession, 
   requireUnlockedWorkspace,
-  auditLog(AuditAction.CLIENT_VIEWED, EntityType.CLIENT),
   ClientController.getClient
 );
 
@@ -98,7 +61,6 @@ router.get('/:id',
 router.put('/:id', 
   validateSession, 
   requireUnlockedWorkspace,
-  auditLog(AuditAction.CLIENT_UPDATED, EntityType.CLIENT),
   ClientController.updateClient
 );
 
@@ -110,7 +72,6 @@ router.put('/:id',
 router.delete('/:id', 
   validateSession, 
   requireUnlockedWorkspace,
-  auditLog(AuditAction.CLIENT_DELETED, EntityType.CLIENT),
   ClientController.deleteClient
 );
 

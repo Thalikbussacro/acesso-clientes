@@ -10,6 +10,7 @@ import Navbar from './components/layout/Navbar';
 import WorkspaceSetup from './components/auth/WorkspaceSetup';
 import Login from './components/auth/Login';
 import Dashboard from './pages/Dashboard';
+import Clients from './pages/Clients';
 
 // Create a client
 const queryClient = new QueryClient({
@@ -103,6 +104,18 @@ const AppRouter: React.FC = () => {
               <>
                 <Navbar />
                 <Dashboard />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/clients"
+          element={
+            <ProtectedRoute requireUnlocked>
+              <>
+                <Navbar />
+                <Clients />
               </>
             </ProtectedRoute>
           }

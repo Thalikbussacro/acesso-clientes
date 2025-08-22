@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
 export interface EncryptedData {
@@ -54,27 +54,31 @@ export class CryptoService {
    */
   static encrypt(data: string, key: Buffer): EncryptedData {
     try {
+      // Validar tamanho da chave
+      if (key.length !== this.KEY_LENGTH) {
+        throw new Error(`Chave deve ter ${this.KEY_LENGTH} bytes`);
+      }
+
       // Gerar IV aleatório
       const iv = crypto.randomBytes(this.IV_LENGTH);
       
-      // Criar cipher
-      const cipher = crypto.createCipher(this.ALGORITHM, key);
-      cipher.setAutoPadding(true);
+      // Criar cipher AES-256-GCM usando createCipheriv
+      const cipher = crypto.createCipheriv(this.ALGORITHM, key, iv);
       
       // Criptografar dados
-      let encrypted = cipher.update(data, 'utf8', 'hex');
-      encrypted += cipher.final('hex');
+      let encrypted = cipher.update(data, 'utf8');
+      cipher.final();
       
-      // Obter authentication tag
+      // Obter tag de autenticação
       const authTag = cipher.getAuthTag();
       
       return {
-        data: encrypted,
+        data: encrypted.toString('base64'),
         iv: iv.toString('hex'),
         authTag: authTag.toString('hex')
       };
     } catch (error) {
-      console.error('❌ Erro na criptografia:', error);
+      console.error('❌ Erro na criptografia AES-256-GCM:', error);
       throw new Error('Falha ao criptografar dados');
     }
   }
@@ -84,22 +88,27 @@ export class CryptoService {
    */
   static decrypt(encryptedData: EncryptedData, key: Buffer): string {
     try {
-      // Converter de hex para buffer
+      // Validar tamanho da chave
+      if (key.length !== this.KEY_LENGTH) {
+        throw new Error(`Chave deve ter ${this.KEY_LENGTH} bytes`);
+      }
+
+      // Converter dados de volta para buffers
       const iv = Buffer.from(encryptedData.iv, 'hex');
       const authTag = Buffer.from(encryptedData.authTag, 'hex');
+      const encrypted = Buffer.from(encryptedData.data, 'base64');
       
-      // Criar decipher
-      const decipher = crypto.createDecipher(this.ALGORITHM, key);
+      // Criar decipher AES-256-GCM usando createDecipheriv
+      const decipher = crypto.createDecipheriv(this.ALGORITHM, key, iv);
       decipher.setAuthTag(authTag);
-      decipher.setAutoPadding(true);
       
       // Descriptografar dados
-      let decrypted = decipher.update(encryptedData.data, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
+      let decrypted = decipher.update(encrypted);
+      decipher.final();
       
-      return decrypted;
+      return decrypted.toString('utf8');
     } catch (error) {
-      console.error('❌ Erro na descriptografia:', error);
+      console.error('❌ Erro na descriptografia AES-256-GCM:', error);
       throw new Error('Falha ao descriptografar dados - chave pode estar incorreta');
     }
   }

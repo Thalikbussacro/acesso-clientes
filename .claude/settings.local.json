@@ -1,3 +1,18 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(npx kill-port:*)",
+      "Bash(curl:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(rm:*)",
+      "Bash(cross-env:*)",
+      "Bash(PORT=3002 npm run dev)",
+      "Bash(sqlite3:*)",
+      "Bash(node:*)",
+      "Bash(npm run reset-seed:*)"
+    ]
+  },
   "outputStyle": "default"
 }

@@ -251,10 +251,69 @@ export class DatabaseService {
         'INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)',
         [1]
       );
+
+      // Verificar se precisamos fazer migração para o novo schema de clientes
+      await this.migrateClientsSchema();
+
+      // Registrar migração v2
+      await this.run(
+        'INSERT OR IGNORE INTO schema_migrations (version) VALUES (?)',
+        [2]
+      );
       
       console.log('✅ Migrations executadas com sucesso');
     } catch (error) {
       console.error('❌ Erro ao executar migrations:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Migra o schema da tabela clients para incluir novos campos
+   */
+  private async migrateClientsSchema(): Promise<void> {
+    try {
+      // Verificar se a migração já foi aplicada
+      const migrationCheck = await this.get(
+        'SELECT version FROM schema_migrations WHERE version = 2'
+      );
+      
+      if (migrationCheck) {
+        console.log('🔄 Migração v2 já aplicada, pulando...');
+        return;
+      }
+
+      console.log('🔄 Aplicando migração v2: Novos campos para clientes...');
+
+      // Verificar se as colunas já existem
+      const tableInfo = await this.all("PRAGMA table_info(clients)");
+      const columnNames = tableInfo.map((col: any) => col.name);
+      
+      // Adicionar notes_content se não existir
+      if (!columnNames.includes('notes_content')) {
+        await this.run('ALTER TABLE clients ADD COLUMN notes_content TEXT');
+        console.log('✅ Campo notes_content adicionado');
+      }
+      
+      // Adicionar notes_images se não existir
+      if (!columnNames.includes('notes_images')) {
+        await this.run('ALTER TABLE clients ADD COLUMN notes_images TEXT');
+        console.log('✅ Campo notes_images adicionado');
+      }
+
+      // Migrar dados existentes de notes_encrypted para notes_content
+      if (columnNames.includes('notes_encrypted')) {
+        await this.run(`
+          UPDATE clients 
+          SET notes_content = notes_encrypted 
+          WHERE notes_encrypted IS NOT NULL AND notes_content IS NULL
+        `);
+        console.log('✅ Dados migrados de notes_encrypted para notes_content');
+      }
+
+      console.log('✅ Migração v2 aplicada com sucesso');
+    } catch (error) {
+      console.error('❌ Erro na migração v2:', error);
       throw error;
     }
   }

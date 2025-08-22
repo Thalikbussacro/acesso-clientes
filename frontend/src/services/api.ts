@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios';
 
 // Configuração base da API
-const API_BASE_URL = 'http://localhost:3001/api';
+const API_BASE_URL = 'http://localhost:3002/api';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

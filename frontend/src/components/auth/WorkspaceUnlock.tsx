@@ -5,7 +5,7 @@ import Input from '../ui/Input';
 import Alert from '../ui/Alert';
 
 const WorkspaceUnlock: React.FC = () => {
-  const { unlock, lock, logout, state } = useAuth();
+  const { unlock, logout, state } = useAuth();
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 

@@ -1,9 +1,10 @@
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 interface AlertProps {
   type?: 'success' | 'warning' | 'error' | 'info';
   title?: string;
-  children: ReactNode;
+  children?: ReactNode;
+  message?: string;
   onClose?: () => void;
   className?: string;
 }
@@ -12,6 +13,7 @@ const Alert: React.FC<AlertProps> = ({
   type = 'info',
   title,
   children,
+  message,
   onClose,
   className = '',
 }) => {
@@ -71,7 +73,7 @@ const Alert: React.FC<AlertProps> = ({
           )}
           
           <div className="text-sm">
-            {children}
+            {message || children}
           </div>
         </div>
         

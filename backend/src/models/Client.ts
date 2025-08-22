@@ -6,20 +6,33 @@ export interface ClientData {
   id?: number;
   workspace_id: number;
   name: string;
-  notes_encrypted?: string;
-  search_index?: string;
+  notes_content?: string; // Rich text criptografado
+  notes_images?: string; // JSON criptografado com metadata das imagens
+  search_index?: string; // Índice de busca não criptografado
   created_at?: string;
   updated_at?: string;
+}
+
+export interface ImageMetadata {
+  id: string;
+  filename: string;
+  originalName: string;
+  path: string;
+  size: number;
+  mimeType: string;
+  uploaded_at: string;
 }
 
 export interface CreateClientRequest {
   name: string;
   notes?: string;
+  images?: ImageMetadata[];
 }
 
 export interface UpdateClientRequest {
   name?: string;
   notes?: string;
+  images?: ImageMetadata[];
 }
 
 export interface ClientInfo {
@@ -32,6 +45,7 @@ export interface ClientInfo {
 
 export interface ClientDetails extends ClientInfo {
   notes: string;
+  images: ImageMetadata[];
 }
 
 export class Client {
@@ -65,19 +79,19 @@ export class Client {
   }
 
   get hasNotes(): boolean {
-    return Boolean(this.data.notes_encrypted);
+    return Boolean(this.data.notes_content);
   }
 
   /**
    * Descriptografa e retorna as notas
    */
   getDecryptedNotes(): string {
-    if (!this.data.notes_encrypted) {
+    if (!this.data.notes_content) {
       return '';
     }
 
     try {
-      const encryptedData: EncryptedData = JSON.parse(this.data.notes_encrypted);
+      const encryptedData: EncryptedData = JSON.parse(this.data.notes_content);
       return CryptoService.decrypt(encryptedData, this.workspace.getMasterKey());
     } catch (error) {
       console.error('❌ Erro ao descriptografar notas:', error);
@@ -86,24 +100,61 @@ export class Client {
   }
 
   /**
+   * Descriptografa e retorna as imagens
+   */
+  getDecryptedImages(): ImageMetadata[] {
+    if (!this.data.notes_images) {
+      return [];
+    }
+
+    try {
+      const encryptedData: EncryptedData = JSON.parse(this.data.notes_images);
+      const decryptedJson = CryptoService.decrypt(encryptedData, this.workspace.getMasterKey());
+      return JSON.parse(decryptedJson);
+    } catch (error) {
+      console.error('❌ Erro ao descriptografar imagens:', error);
+      throw new Error('Falha ao descriptografar imagens do cliente');
+    }
+  }
+
+  /**
    * Criptografa e define as notas
    */
   private setEncryptedNotes(notes: string): void {
     if (!notes || notes.trim() === '') {
-      this.data.notes_encrypted = null;
+      this.data.notes_content = undefined;
       this.data.search_index = '';
       return;
     }
 
     try {
       const encryptedData = CryptoService.encrypt(notes, this.workspace.getMasterKey());
-      this.data.notes_encrypted = JSON.stringify(encryptedData);
+      this.data.notes_content = JSON.stringify(encryptedData);
       
       // Criar índice de busca (texto limpo para permitir busca)
       this.data.search_index = this.createSearchIndex(notes);
     } catch (error) {
       console.error('❌ Erro ao criptografar notas:', error);
       throw new Error('Falha ao criptografar notas do cliente');
+    }
+  }
+
+  /**
+   * Criptografa e define as imagens
+   */
+  private setEncryptedImages(images: ImageMetadata[]): void {
+    if (!images || images.length === 0) {
+      this.data.notes_images = undefined;
+      return;
+    }
+
+    try {
+      const imagesJson = JSON.stringify(images);
+      const encryptedData = CryptoService.encrypt(imagesJson, this.workspace.getMasterKey());
+      this.data.notes_images = JSON.stringify(encryptedData);
+    } catch (error) {
+      console.error('❌ Erro ao criptografar imagens:', error);
+      throw new Error('Falha ao criptografar metadados das imagens');
     }
   }
 
@@ -137,8 +188,14 @@ export class Client {
 
       if (request.notes !== undefined) {
         this.setEncryptedNotes(request.notes);
-        updates.push('notes_encrypted = ?', 'search_index = ?');
-        params.push(this.data.notes_encrypted, this.data.search_index);
+        updates.push('notes_content = ?', 'search_index = ?');
+        params.push(this.data.notes_content, this.data.search_index);
+      }
+
+      if (request.images !== undefined) {
+        this.setEncryptedImages(request.images);
+        updates.push('notes_images = ?');
+        params.push(this.data.notes_images);
       }
 
       if (updates.length === 0) {
@@ -192,7 +249,8 @@ export class Client {
   toDetails(): ClientDetails {
     return {
       ...this.toInfo(),
-      notes: this.getDecryptedNotes()
+      notes: this.getDecryptedNotes(),
+      images: this.getDecryptedImages()
     };
   }
 
@@ -217,11 +275,16 @@ export class Client {
         client.setEncryptedNotes(request.notes);
       }
 
+      // Definir imagens se fornecidas
+      if (request.images) {
+        client.setEncryptedImages(request.images);
+      }
+
       // Inserir no banco
       const result = await databaseService.run(
-        `INSERT INTO clients (workspace_id, name, notes_encrypted, search_index)
-         VALUES (?, ?, ?, ?)`,
-        [workspaceId, request.name, client.data.notes_encrypted, client.data.search_index]
+        `INSERT INTO clients (workspace_id, name, notes_content, notes_images, search_index)
+         VALUES (?, ?, ?, ?, ?)`,
+        [workspaceId, request.name, client.data.notes_content, client.data.notes_images, client.data.search_index]
       );
 
       client.data.id = result.lastID;

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react';
 import { authApi, tokenManager, type WorkspaceInfo, type SessionInfo } from '../services/api';
 
 // Tipos para o estado de autenticação

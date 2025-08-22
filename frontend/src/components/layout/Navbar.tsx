@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import Button from '../ui/Button';
 
 const Navbar: React.FC = () => {
   const { state, lock, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
 
   const handleLock = async () => {
     await lock();
@@ -23,22 +24,52 @@ const Navbar: React.FC = () => {
           {/* Logo e título */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h1 className="text-lg font-semibold text-secondary-900">
-                  Sistema de Acessos
-                </h1>
-                {state.workspace && (
-                  <p className="text-xs text-secondary-500">
-                    {state.workspace.name}
-                  </p>
-                )}
-              </div>
+              <Link to="/dashboard" className="flex items-center">
+                <div className="h-8 w-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h1 className="text-lg font-semibold text-secondary-900">
+                    Sistema de Acessos
+                  </h1>
+                  {state.workspace && (
+                    <p className="text-xs text-secondary-500">
+                      {state.workspace.name}
+                    </p>
+                  )}
+                </div>
+              </Link>
             </div>
+            
+            {/* Navegação */}
+            {state.isUnlocked && (
+              <nav className="ml-8">
+                <div className="flex space-x-8">
+                  <Link
+                    to="/dashboard"
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname === '/dashboard'
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50'
+                    }`}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/clients"
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      location.pathname === '/clients'
+                        ? 'text-primary-600 bg-primary-50'
+                        : 'text-secondary-600 hover:text-secondary-900 hover:bg-secondary-50'
+                    }`}
+                  >
+                    Clientes
+                  </Link>
+                </div>
+              </nav>
+            )}
           </div>
 
           {/* Status e ações */}
